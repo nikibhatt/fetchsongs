@@ -3,27 +3,25 @@ from .models import *
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 
+APP = Flask(__name__)
+# server name is specified in proc file
+APP.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///MedCabinet.db"
+DB.init_app(app)
+
 def predict(input_song):
-    output input_song.to_json(orient='columns')
+    return input_song.to_json(orient='columns')
 
-def create_app():
-    app = Flask(__name__)
-    # server name is specified in proc file
-    app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///MedCabinet.db"
-    DB.init_app(app)
+@APP.route('/', methods=['GET', 'POST'])
+def root():
+    return "Spotify song selector API"
 
-    #Base landing page
-    @app.route('/', methods=['GET', 'POST'])
-    def root():
-        return "Spotify song selector API"
+@APP.route('/song', method=['POST'])
+def song():
+    song_selected = request.get_json(force=True)
+    song_id = song_selected['input']
+    assert isinstance(song_id, str)
+    output = predict(song_id)
+    return output
 
-    #Reset will drop all tables, including those not in models
-    @app.route('/song', method=['POST'])
-    def song():
-        song_selected = request.get_json(force=True)
-        song_id = song_selected['input']
-        assert isinstance(song_id, str)
-        output = predict(song_id)
-        return output
-
-    return app
+if __name == "__main":
+    APP.run()
